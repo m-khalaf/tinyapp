@@ -24,6 +24,12 @@ app.get("/urls", (req,res)=>{ //adding a route for/urls and passing variables to
   const templateVars={urls:urlDatabase};
   res.render("urls_index",templateVars)
 })
+
+app.get("/urls/:id", (req,res)=>{ //adding route handler for urls/:id to capture the shortebed URL as a parameter
+  const templateVars={id:req.params.id, longURL:urlDatabase[req.params.id]};
+  res.render("urls_show",templateVars)
+})
+
 app.listen(PORT, ()=>{
   console.log(`Example app listening on port ${PORT}!`);
 });
