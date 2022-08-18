@@ -4,6 +4,8 @@ const PORT = 8080; //default port 8000
 app.set("view engine", "ejs"); //Set ejs as the view engine
 app.use(express.urlencoded({ extended: true })); //translates the buffer sent in the body of post request
 
+function generateRandomString() {}
+
 const urlDatabase = {
   "b2xVn2": "http://www.lighthouselabs.ca",
   "9sm5xK": "http://www.google.com"
@@ -33,6 +35,11 @@ res.render("urls_new");
 app.get("/urls/:id", (req,res)=>{ //adding route handler for urls/:id to capture the shortebed URL as a parameter
   const templateVars={id:req.params.id, longURL:urlDatabase[req.params.id]};
   res.render("urls_show",templateVars)
+});
+
+app.post("/urls", (req, res) => {
+  console.log(req.body); // Log the POST request body to the console
+  res.send("Ok"); // Respond with 'Ok' (we will replace this)
 });
 
 app.listen(PORT, ()=>{
