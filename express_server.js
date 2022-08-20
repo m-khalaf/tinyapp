@@ -51,10 +51,16 @@ app.post("/urls", (req, res) => {
   res.redirect(`/urls/${id}`); //redirect to the urls/:id which initiates a get reuquest that renders the page of the url
 });
 
-app.post("/urls/:id/delete", (req, res)=>{
+app.post("/urls/:id/delete", (req, res)=>{// add route to delete urls and redirect to main page
   let idToDelete= req.params.id;
   delete urlDatabase[idToDelete];
   res.redirect("/urls");
+});
+
+app.post("/urls/:id/update", (req,res)=>{
+let idTOUpdate = req.params.id;
+urlDatabase[idTOUpdate]=req.body.longURL;
+res.redirect("/urls");
 });
 
 app.listen(PORT, () => {
