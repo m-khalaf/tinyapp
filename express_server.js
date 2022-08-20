@@ -41,9 +41,8 @@ app.get("/urls/:id", (req, res) => { //adding route handler for urls/:id to capt
 });
 
 app.get("/u/:id", (req, res) => {
-  //const templateVars={id:req.params.id, longURL:urlDatabase[req.params.id]};
-  const longURL = urlDatabase[req.params.id];
-  res.redirect(longURL);
+  const longURL = urlDatabase[req.params.id]; //saves the corresponding long URL in a variable
+  res.redirect(longURL); //redirects the short form to the actual long URL
 });
 
 app.post("/urls", (req, res) => {
