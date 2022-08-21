@@ -36,7 +36,8 @@ app.get("/urls", (req, res) => { //adding a route for/urls and passing variables
 });
 
 app.get("/urls/new", (req, res) => {
-  res.render("urls_new");
+  const templateVars={username: req.cookies["username"]};
+  res.render("urls_new", templateVars);
 });
 
 app.get("/urls/:id", (req, res) => { //adding route handler for urls/:id to capture the shortebed URL as a parameter
@@ -47,6 +48,11 @@ app.get("/urls/:id", (req, res) => { //adding route handler for urls/:id to capt
 app.get("/u/:id", (req, res) => {
   const longURL = urlDatabase[req.params.id]; //saves the corresponding long URL in a variable
   res.redirect(longURL); //redirects the short form to the actual long URL
+});
+
+app.get("/register",(req,res)=>{
+  const templateVars={username: req.cookies["username"]};
+res.render("urls_newForm",templateVars)
 });
 
 app.post("/urls", (req, res) => {
@@ -67,14 +73,13 @@ urlDatabase[idTOUpdate]=req.body.longURL;
 res.redirect("/urls");
 });
 
-app.post("/login",(req, res)=>{
-//console.log(req.body.username);
-res.cookie("username",req.body.username);
+app.post("/login",(req, res)=>{ //route to loging when user signs in
+res.cookie("username",req.body.username); //assigns a name to the saved username cookie
 res.redirect("/urls");
 });
 
-app.post("/logout", (req,res)=>{
-res.clearCookie("username");
+app.post("/logout", (req,res)=>{ //route to logout when user logs out
+res.clearCookie("username");//clears the saved cookie
 res.redirect("/urls")
 });
 
