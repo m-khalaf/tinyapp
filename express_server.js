@@ -1,8 +1,12 @@
 const express = require("express");
+const cookieParser = require('cookie-parser');
+
 const app = express();
 const PORT = 8080; //default port 8000
+
 app.set("view engine", "ejs"); //Set ejs as the view engine
 app.use(express.urlencoded({ extended: true })); //translates the buffer sent in the body of post request
+app.use(cookieParser());
 
 function generateRandomString() { //generates random 6 charachter string
   let r = (Math.random() + 1).toString(36).substring(6);
@@ -27,7 +31,7 @@ app.get("/hello", (req, res) => {
 });
 
 app.get("/urls", (req, res) => { //adding a route for/urls and passing variables to the template
-  const templateVars = { urls: urlDatabase };
+  const templateVars = { urls: urlDatabase, username: req.cookies["username"] };
   res.render("urls_index", templateVars)
 });
 
@@ -36,7 +40,7 @@ app.get("/urls/new", (req, res) => {
 });
 
 app.get("/urls/:id", (req, res) => { //adding route handler for urls/:id to capture the shortebed URL as a parameter
-  const templateVars = { id: req.params.id, longURL: urlDatabase[req.params.id] };
+  const templateVars = { id: req.params.id, longURL: urlDatabase[req.params.id], username: req.cookies["username"]};
   res.render("urls_show", templateVars)
 });
 
@@ -61,6 +65,17 @@ app.post("/urls/:id/update", (req,res)=>{
 let idTOUpdate = req.params.id;
 urlDatabase[idTOUpdate]=req.body.longURL;
 res.redirect("/urls");
+});
+
+app.post("/login",(req, res)=>{
+//console.log(req.body.username);
+res.cookie("username",req.body.username);
+res.redirect("/urls");
+});
+
+app.post("/logout", (req,res)=>{
+res.clearCookie("username");
+res.redirect("/urls")
 });
 
 app.listen(PORT, () => {
