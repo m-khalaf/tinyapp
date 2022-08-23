@@ -8,14 +8,22 @@ app.set("view engine", "ejs"); //Set ejs as the view engine
 app.use(express.urlencoded({ extended: true })); //translates the buffer sent in the body of post request
 app.use(cookieParser());
 
-const users ={};
-
 function generateRandomString() { //generates random 6 charachter string
   let r = (Math.random() + 1).toString(36).substring(6);
   return r;
 };
 
-const urlDatabase = {
+function getUserByEmail(usersObject, email) {//returns user's object if it exists
+  for (const user in usersObject) {
+    if (usersObject[user].email === email) {
+      return usersObject;
+    }
+  }
+  return null;
+}
+
+const users = {};//empty object to store users information when they register
+const urlDatabase = {//stores URLs in their short and long forms
   "b2xVn2": "http://www.lighthouselabs.ca",
   "9sm5xK": "http://www.google.com"
 };
@@ -38,12 +46,12 @@ app.get("/urls", (req, res) => { //adding a route for/urls and passing variables
 });
 
 app.get("/urls/new", (req, res) => {
-  const templateVars={user_id: req.cookies["user_id"]};
+  const templateVars = { user_id: req.cookies["user_id"] };
   res.render("urls_new", templateVars);
 });
 
 app.get("/urls/:id", (req, res) => { //adding route handler for urls/:id to capture the shortebed URL as a parameter
-  const templateVars = { id: req.params.id, longURL: urlDatabase[req.params.id], user_id: req.cookies["user_id"]};
+  const templateVars = { id: req.params.id, longURL: urlDatabase[req.params.id], user_id: req.cookies["user_id"] };
   res.render("urls_show", templateVars)
 });
 
@@ -52,9 +60,9 @@ app.get("/u/:id", (req, res) => {
   res.redirect(longURL); //redirects the short form to the actual long URL
 });
 
-app.get("/register",(req,res)=>{ //route to register new user 
-  const templateVars={user_id: req.cookies["user_id"]};
-res.render("urls_newForm",templateVars)
+app.get("/register", (req, res) => { //route to register new user 
+  const templateVars = { user_id: req.cookies["user_id"] };
+  res.render("urls_newForm", templateVars)
 });
 
 app.post("/urls", (req, res) => {
@@ -63,40 +71,49 @@ app.post("/urls", (req, res) => {
   res.redirect(`/urls/${id}`); //redirect to the urls/:id which initiates a get reuquest that renders the page of the url
 });
 
-app.post("/urls/:id/delete", (req, res)=>{// add route to delete urls and redirect to main page
-  let idToDelete= req.params.id;
+app.post("/urls/:id/delete", (req, res) => {// add route to delete urls and redirect to main page
+  let idToDelete = req.params.id;
   delete urlDatabase[idToDelete];
   res.redirect("/urls");
 });
 
-app.post("/urls/:id/update", (req,res)=>{
-let idTOUpdate = req.params.id;
-urlDatabase[idTOUpdate]=req.body.longURL;
-res.redirect("/urls");
+app.post("/urls/:id/update", (req, res) => {
+  let idTOUpdate = req.params.id;
+  urlDatabase[idTOUpdate] = req.body.longURL;
+  res.redirect("/urls");
 });
 
-app.post("/login",(req, res)=>{ //route to loging when user signs in
-res.cookie("username",req.body.username); //assigns a name to the saved username cookie
-res.redirect("/urls");
+app.post("/login", (req, res) => { //route to loging when user signs in
+  res.cookie("username", req.body.username); //assigns a name to the saved username cookie
+  res.redirect("/urls");
 });
 
-app.post("/logout", (req,res)=>{ //route to logout when user logs out
-res.clearCookie("user_id");//clears the saved cookie
-res.redirect("/urls")
+app.post("/logout", (req, res) => { //route to logout when user logs out
+  res.clearCookie("user_id");//clears the saved cookie
+  res.redirect("/urls")
 });
 
-app.post("/register", (req,res)=>{
-const userID = generateRandomString();
-const userEmail = req.body.email;
-const userPassword = req.body.password;
-users[userID]={
-  id: userID,
-  email: userEmail,
-  password: userPassword
-}
+app.post("/register", (req, res) => { //route to add user info to blobal users object
+  const userID = generateRandomString();
+  const userEmail = req.body.email;
+  const userPassword = req.body.password;
 
-res.cookie("user_id",users[userID]);
-res.redirect("/urls");
+  if (!userEmail || !userPassword) {//checks if either of email or passwords is empty
+    res.status(400).send('invalid input');
+  }else if (getUserByEmail(users,userEmail)!== null){//checks if user already exists
+    res.status(400).send('User already exists');
+  }
+  else{//if user does not exists saves the infor to the object
+    users[userID] = { //saves user info in the user object
+    id: userID,
+    email: userEmail,
+    password: userPassword
+  };
+  
+  res.cookie("user_id", users[userID]);//saves the user info as a cookie
+  res.redirect("/urls");
+  }
+  
 });
 
 app.listen(PORT, () => {
