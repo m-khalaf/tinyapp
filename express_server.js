@@ -16,7 +16,7 @@ function generateRandomString() { //generates random 6 charachter string
 function getUserByEmail(usersObject, email) {//returns user's object if it exists
   for (const user in usersObject) {
     if (usersObject[user].email === email) {
-      return usersObject;
+      return usersObject[user];
     }
   }
   return null;
@@ -41,17 +41,17 @@ app.get("/hello", (req, res) => {
 });
 
 app.get("/urls", (req, res) => { //adding a route for/urls and passing variables to the template
-  const templateVars = { urls: urlDatabase, user_id: req.cookies["user_id"] };
+  const templateVars = { urls: urlDatabase, user: users[req.cookies["user_id"]] };
   res.render("urls_index", templateVars)
 });
 
 app.get("/urls/new", (req, res) => {
-  const templateVars = { user_id: req.cookies["user_id"] };
+  const templateVars = { user: users[req.cookies["user_id"]] };
   res.render("urls_new", templateVars);
 });
 
 app.get("/urls/:id", (req, res) => { //adding route handler for urls/:id to capture the shortebed URL as a parameter
-  const templateVars = { id: req.params.id, longURL: urlDatabase[req.params.id], user_id: req.cookies["user_id"] };
+  const templateVars = { id: req.params.id, longURL: urlDatabase[req.params.id], user: users[req.cookies["user_id"]]};
   res.render("urls_show", templateVars)
 });
 
@@ -61,12 +61,12 @@ app.get("/u/:id", (req, res) => {
 });
 
 app.get("/register", (req, res) => { //route to register new user 
-  const templateVars = { user_id: req.cookies["user_id"] };
+  const templateVars = { user: users[req.cookies["user_id"]] };
   res.render("urls_newForm", templateVars)
 });
 
-app.get("/login",(req,res)=>{
-  const templateVars = { user_id: req.cookies["user_id"] };
+app.get("/login", (req, res) => {
+  const templateVars = { user: users[req.cookies["user_id"]] };
   res.render("urls_login", templateVars)
 });
 
@@ -89,8 +89,14 @@ app.post("/urls/:id/update", (req, res) => {
 });
 
 app.post("/login", (req, res) => { //route to loging when user signs in
-  res.cookie("username", req.body.username); //assigns a name to the saved username cookie
+  if (getUserByEmail(users, req.body.email) === null) {
+    res.status(403).send('user does not exist');//returns error if user doesnt exist
+  }else if (getUserByEmail(users, req.body.email).password!==req.body.password){
+    res.status(403).send('wrong password');//returns error if password is wrong
+  }else {
+  res.cookie("user_id", getUserByEmail(users, req.body.email).id);//passes user id cookie
   res.redirect("/urls");
+  }
 });
 
 app.post("/logout", (req, res) => { //route to logout when user logs out
@@ -105,20 +111,20 @@ app.post("/register", (req, res) => { //route to add user info to blobal users o
 
   if (!userEmail || !userPassword) {//checks if either of email or passwords is empty
     res.status(400).send('invalid input');
-  }else if (getUserByEmail(users,userEmail)!== null){//checks if user already exists
+  } else if (getUserByEmail(users, userEmail) !== null) {//checks if user already exists
     res.status(400).send('User already exists');
   }
-  else{//if user does not exists saves the infor to the object
+  else {//if user does not exists saves the infor to the object
     users[userID] = { //saves user info in the user object
-    id: userID,
-    email: userEmail,
-    password: userPassword
-  };
-  
-  res.cookie("user_id", users[userID]);//saves the user info as a cookie
-  res.redirect("/urls");
+      id: userID,
+      email: userEmail,
+      password: userPassword
+    };
+
+    res.cookie("user_id", users[userID].id);//saves the user info as a cookie
+    res.redirect("/urls");
   }
-  
+
 });
 
 app.listen(PORT, () => {
