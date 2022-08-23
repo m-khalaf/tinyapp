@@ -65,6 +65,11 @@ app.get("/register", (req, res) => { //route to register new user
   res.render("urls_newForm", templateVars)
 });
 
+app.get("/login",(req,res)=>{
+  const templateVars = { user_id: req.cookies["user_id"] };
+  res.render("urls_login", templateVars)
+});
+
 app.post("/urls", (req, res) => {
   let id = generateRandomString();// generates random cahracters and saves it to the short ID
   urlDatabase[id] = req.body.longURL;
@@ -90,7 +95,7 @@ app.post("/login", (req, res) => { //route to loging when user signs in
 
 app.post("/logout", (req, res) => { //route to logout when user logs out
   res.clearCookie("user_id");//clears the saved cookie
-  res.redirect("/urls")
+  res.redirect("/urls");
 });
 
 app.post("/register", (req, res) => { //route to add user info to blobal users object
