@@ -28,12 +28,23 @@ const urlDatabase = {//stores URLs in their short and long forms
   "9sm5xK": "http://www.google.com"
 };
 
+const urlDatabasee = {
+  b6UTxQ: {
+    longURL: "https://www.tsn.ca",
+    userID: "aJ48lW",
+  },
+  i3BoGr: {
+    longURL: "https://www.google.ca",
+    userID: "aJ48lW",
+  },
+};
+
 app.get("/", (req, res) => {
   res.send("Hello!");
 });
 
 app.get("/urls.json", (req, res) => {
-  res.json(urlDatabase);
+  res.json(urlDatabasee);
 });
 
 app.get("/hello", (req, res) => {
@@ -41,11 +52,14 @@ app.get("/hello", (req, res) => {
 });
 
 app.get("/urls", (req, res) => { //adding a route for/urls and passing variables to the template
-  const templateVars = { urls: urlDatabase, user: users[req.cookies["user_id"]] };
+  const templateVars = { urls: urlDatabasee, user: users[req.cookies["user_id"]] };
   res.render("urls_index", templateVars)
 });
 
 app.get("/urls/new", (req, res) => {
+  if (req.cookies["user_id"]===undefined){//redirect user to login page before creating a new link
+    res.redirect("/login");
+  }
   const templateVars = { user: users[req.cookies["user_id"]] };
   res.render("urls_new", templateVars);
 });
@@ -56,21 +70,33 @@ app.get("/urls/:id", (req, res) => { //adding route handler for urls/:id to capt
 });
 
 app.get("/u/:id", (req, res) => {
+  if (urlDatabase[req.params.id]===undefined){ //sends an error message if link does not exist
+    res.send("Link does not exist, please try again");
+  }
   const longURL = urlDatabase[req.params.id]; //saves the corresponding long URL in a variable
   res.redirect(longURL); //redirects the short form to the actual long URL
 });
 
 app.get("/register", (req, res) => { //route to register new user 
+  if (req.cookies["user_id"]){//redirects user to main page if they are already logged in
+    res.redirect("/urls");
+  }
   const templateVars = { user: users[req.cookies["user_id"]] };
   res.render("urls_newForm", templateVars)
 });
 
 app.get("/login", (req, res) => {
+  if (req.cookies["user_id"]){//redirects user to main page if they are already logged in
+    res.redirect("/urls");
+  }
   const templateVars = { user: users[req.cookies["user_id"]] };
   res.render("urls_login", templateVars)
 });
 
 app.post("/urls", (req, res) => {
+  if (req.cookies["user_id"]===undefined){ //prevents user from adding a new link till they sign in
+    res.send("you are sneaky...log in first before creating a new link");
+  }
   let id = generateRandomString();// generates random cahracters and saves it to the short ID
   urlDatabase[id] = req.body.longURL;
   res.redirect(`/urls/${id}`); //redirect to the urls/:id which initiates a get reuquest that renders the page of the url
