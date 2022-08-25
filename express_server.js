@@ -73,6 +73,10 @@ app.get("/urls/:id", (req, res) => { //adding route handler for urls/:id to capt
   if(!req.cookies["user_id"]){
     res.status(403).send("Please log in to view the link");
   };
+
+  if (urlDatabase[req.params.id].userID!==req.cookies["user_id"]){
+    res.status(403).send("this is not your link");
+  };
   
   const templateVars = { id: req.params.id, longURL: urlDatabase[req.params.id].longURL, user: users[req.cookies["user_id"]] };
   res.render("urls_show", templateVars)
