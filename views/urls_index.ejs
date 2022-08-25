@@ -21,6 +21,10 @@
     <header><%- include('./partials/_header.ejs');%></header>
 
     <main style="margin: 1em;">
+      <%if (!user){%>
+        <p>Please log in first to view the URLS</p>
+      <%} else {%>
+
       <h3>My URLs</h3>
       <table class="table">
         <thead>
@@ -31,21 +35,22 @@
           </tr>
         </thead>
         <tbody>
-          <% for (let shortUrl in urls) { %>
-            
-              
-              <tr>
-                <form method="POST" action="/urls/<%= shortUrl %>/delete">
-              <td><%= shortUrl %></td>
-              <td><%= urls[shortUrl].longURL %></td>
-              <td>
-                <button type="delete" class="btn btn-danger">Delete</button>
-              </td>
-              </form>
-              <td><a href="/urls/<%= shortUrl %>">Edit</a></td>
-            </tr>
+          
+              <% for (let shortUrl in urls) { %>
+                  <tr>
+                    <form method="POST" action="/urls/<%= shortUrl %>/delete">
+                  <td><%= shortUrl %></td>
+                  <td><%= urls[shortUrl].longURL %></td>
+                  <td>
+                    <button type="delete" class="btn btn-danger">Delete</button>
+                  </td>
+                  </form>
+                  <td><a href="/urls/<%= shortUrl %>">Edit</a></td>
+                </tr>
           
           <% } %>
+          <% } %>
+          
         </tbody>
       </table>
     </main>

@@ -20,6 +20,15 @@ function getUserByEmail(usersObject, email) {//returns user's object if it exist
     }
   }
   return null;
+};
+
+function urlsForUser(id, URLs) {
+  let userUrls = {};
+  for (const url in URLs)
+    if (id === URLs[url].userID) {
+      userUrls[url] = URLs[url];
+    }
+  return userUrls;
 }
 
 const users = {};//empty object to store users information when they register
@@ -48,19 +57,23 @@ app.get("/hello", (req, res) => {
 });
 
 app.get("/urls", (req, res) => { //adding a route for/urls and passing variables to the template
-  const templateVars = { urls: urlDatabase, user: users[req.cookies["user_id"]] };
+  const templateVars = { urls: urlsForUser(req.cookies["user_id"],urlDatabase), user: users[req.cookies["user_id"]]};
   res.render("urls_index", templateVars)
 });
 
 app.get("/urls/new", (req, res) => {
   if (req.cookies["user_id"] === undefined) {//redirect user to login page before creating a new link
     res.redirect("/login");
-  }
+  };
   const templateVars = { user: users[req.cookies["user_id"]] };
   res.render("urls_new", templateVars);
 });
 
 app.get("/urls/:id", (req, res) => { //adding route handler for urls/:id to capture the shortebed URL as a parameter
+  if(!req.cookies["user_id"]){
+    res.status(403).send("Please log in to view the link");
+  };
+  
   const templateVars = { id: req.params.id, longURL: urlDatabase[req.params.id].longURL, user: users[req.cookies["user_id"]] };
   res.render("urls_show", templateVars)
 });
