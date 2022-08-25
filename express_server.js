@@ -70,21 +70,21 @@ app.get("/urls/new", (req, res) => {
 });
 
 app.get("/urls/:id", (req, res) => { //adding route handler for urls/:id to capture the shortebed URL as a parameter
-  if(!req.cookies["user_id"]){
+  if(!req.cookies["user_id"]){//checks if user is logged in and if not sends an error
     res.status(403).send("Please log in to view the link");
   };
 
   if (urlDatabase[req.params.id].userID!==req.cookies["user_id"]){
-    res.status(403).send("this is not your link");
+    res.status(403).send("this is not your link");//checks if the link belongs to the user
   };
-  
+
   const templateVars = { id: req.params.id, longURL: urlDatabase[req.params.id].longURL, user: users[req.cookies["user_id"]] };
   res.render("urls_show", templateVars)
 });
 
 app.get("/u/:id", (req, res) => {
   if (urlDatabase[req.params.id] === undefined) { //sends an error message if link does not exist
-    res.send("Link does not exist, please try again");
+    res.status(403).send("Link does not exist, please try again");
   }
   const longURL = urlDatabase[req.params.id].longURL; //saves the corresponding long URL in a variable
   res.redirect(longURL); //redirects the short form to the actual long URL
@@ -119,12 +119,38 @@ app.post("/urls", (req, res) => {
 });
 
 app.post("/urls/:id/delete", (req, res) => {// add route to delete urls and redirect to main page
+  
+  if (urlDatabase[req.params.id] === undefined) { //sends an error message if link does not exist
+    res.status(403).send("Link does not exist, please try again");
+  }
+
+  if(!req.cookies["user_id"]){//checks if user is logged in and if not sends an error
+    res.status(403).send("Please log in to view the link");
+  };
+
+  if (urlDatabase[req.params.id].userID!==req.cookies["user_id"]){
+    res.status(403).send("this is not your link");//checks if the link belongs to the user
+  };
+  
   let idToDelete = req.params.id;
   delete urlDatabase[idToDelete];
   res.redirect("/urls");
 });
 
 app.post("/urls/:id/update", (req, res) => {
+  
+  if (urlDatabase[req.params.id] === undefined) { //sends an error message if link does not exist
+    res.status(403).send("Link does not exist, please try again");
+  }
+
+  if(!req.cookies["user_id"]){//checks if user is logged in and if not sends an error
+    res.status(403).send("Please log in to view the link");
+  };
+
+  if (urlDatabase[req.params.id].userID!==req.cookies["user_id"]){
+    res.status(403).send("this is not your link");//checks if the link belongs to the user
+  };
+
   let idToUpdate = req.params.id;
   urlDatabase[idToUpdate].longURL = req.body.longURL;
   res.redirect("/urls");
