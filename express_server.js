@@ -1,5 +1,6 @@
 const express = require("express");
 const cookieParser = require('cookie-parser');
+const cookieSession = require('cookie-session');
 const bcrypt = require("bcryptjs");
 const app = express();
 const PORT = 8080; //default port 8000
@@ -7,6 +8,10 @@ const PORT = 8080; //default port 8000
 app.set("view engine", "ejs"); //Set ejs as the view engine
 app.use(express.urlencoded({ extended: true })); //translates the buffer sent in the body of post request
 app.use(cookieParser());
+app.use(cookieSession({
+  name: 'session',
+  keys: ['abcdefghlijkaosiedfbdfb']
+}));
 
 function generateRandomString() { //generates random 6 charachter string
   let r = (Math.random() + 1).toString(36).substring(6);
@@ -57,28 +62,28 @@ app.get("/hello", (req, res) => {
 });
 
 app.get("/urls", (req, res) => { //adding a route for/urls and passing variables to the template
-  const templateVars = { urls: urlsForUser(req.cookies["user_id"], urlDatabase), user: users[req.cookies["user_id"]] };
+  const templateVars = { urls: urlsForUser(req.session.user_id, urlDatabase), user: users[req.session.user_id] };
   res.render("urls_index", templateVars)
 });
 
 app.get("/urls/new", (req, res) => {
-  if (req.cookies["user_id"] === undefined) {//redirect user to login page before creating a new link
+  if (!req.session.user_id) {//redirect user to login page before creating a new link
     res.redirect("/login");
   };
-  const templateVars = { user: users[req.cookies["user_id"]] };
+  const templateVars = { user: users[req.session.user_id] };
   res.render("urls_new", templateVars);
 });
 
 app.get("/urls/:id", (req, res) => { //adding route handler for urls/:id to capture the shortebed URL as a parameter
-  if (!req.cookies["user_id"]) {//checks if user is logged in and if not sends an error
+  if (!req.session.user_id) {//checks if user is logged in and if not sends an error
     res.status(403).send("Please log in to view the link");
   };
 
-  if (urlDatabase[req.params.id].userID !== req.cookies["user_id"]) {
+  if (urlDatabase[req.params.id].userID !== req.session.user_id) {
     res.status(403).send("this is not your link");//checks if the link belongs to the user
   };
 
-  const templateVars = { id: req.params.id, longURL: urlDatabase[req.params.id].longURL, user: users[req.cookies["user_id"]] };
+  const templateVars = { id: req.params.id, longURL: urlDatabase[req.params.id].longURL, user: users[req.session.user_id] };
   res.render("urls_show", templateVars)
 });
 
@@ -91,29 +96,29 @@ app.get("/u/:id", (req, res) => {
 });
 
 app.get("/register", (req, res) => { //route to register new user 
-  if (req.cookies["user_id"]) {//redirects user to main page if they are already logged in
+  if (req.session.user_id) {//redirects user to main page if they are already logged in
     res.redirect("/urls");
   }
-  const templateVars = { user: users[req.cookies["user_id"]] };
+  const templateVars = { user: users[req.session.user_id] };
   res.render("urls_newForm", templateVars)
 });
 
 app.get("/login", (req, res) => {
-  if (req.cookies["user_id"]) {//redirects user to main page if they are already logged in
+  if (req.session.user_id) {//redirects user to main page if they are already logged in
     res.redirect("/urls");
   }
-  const templateVars = { user: users[req.cookies["user_id"]] };
+  const templateVars = { user: users[req.session.user_id] };
   res.render("urls_login", templateVars)
 });
 
 app.post("/urls", (req, res) => {
-  if (req.cookies["user_id"] === undefined) { //prevents user from adding a new link till they sign in
+  if (!req.session.user_id) { //prevents user from adding a new link till they sign in
     res.send("you are sneaky...log in first before creating a new link");
   }
   let id = generateRandomString();// generates random cahracters and saves it to the short ID
   urlDatabase[id] = {
     longURL: req.body.longURL,
-    userID: req.cookies["user_id"]
+    userID: req.session.user_id
   }
   res.redirect(`/urls/${id}`); //redirect to the urls/:id which initiates a get reuquest that renders the page of the url
 });
@@ -124,11 +129,11 @@ app.post("/urls/:id/delete", (req, res) => {// add route to delete urls and redi
     res.status(403).send("Link does not exist, please try again");
   }
 
-  if (!req.cookies["user_id"]) {//checks if user is logged in and if not sends an error
+  if (!req.session.user_id) {//checks if user is logged in and if not sends an error
     res.status(403).send("Please log in to view the link");
   };
 
-  if (urlDatabase[req.params.id].userID !== req.cookies["user_id"]) {
+  if (urlDatabase[req.params.id].userID !== req.session.user_id) {
     res.status(403).send("this is not your link");//checks if the link belongs to the user
   };
 
@@ -143,11 +148,11 @@ app.post("/urls/:id/update", (req, res) => {
     res.status(403).send("Link does not exist, please try again");
   }
 
-  if (!req.cookies["user_id"]) {//checks if user is logged in and if not sends an error
+  if (!req.session.user_id) {//checks if user is logged in and if not sends an error
     res.status(403).send("Please log in to view the link");
   };
 
-  if (urlDatabase[req.params.id].userID !== req.cookies["user_id"]) {
+  if (urlDatabase[req.params.id].userID !== req.session.user_id) {
     res.status(403).send("this is not your link");//checks if the link belongs to the user
   };
 
@@ -160,16 +165,16 @@ app.post("/login", (req, res) => { //route to loging when user signs in
 
   if (getUserByEmail(users, req.body.email) === null) {
     res.status(403).send('user does not exist');//returns error if user doesnt exist
-  } else if (!bcrypt.compareSync(req.body.password,getUserByEmail(users, req.body.email).password )) {
+  } else if (!bcrypt.compareSync(req.body.password, getUserByEmail(users, req.body.email).password)) {//compares stored pass to entered pass
     res.status(403).send('wrong password');//returns error if password is wrong
   } else {
-    res.cookie("user_id", getUserByEmail(users, req.body.email).id);//passes user id cookie
+    req.session.user_id = getUserByEmail(users, req.body.email).id;//passes user id cookie
     res.redirect("/urls");
   }
 });
 
 app.post("/logout", (req, res) => { //route to logout when user logs out
-  res.clearCookie("user_id");//clears the saved cookie
+  req.session=null;//clears th coookie when loggin out
   res.redirect("/urls");
 });
 
@@ -191,7 +196,7 @@ app.post("/register", (req, res) => { //route to add user info to blobal users o
       password: hashedPassword
     };
 
-    res.cookie("user_id", users[userID].id);//saves the user info as a cookie
+    req.session.user_id = users[userID].id;//saves the user info as a cookie
     res.redirect("/urls");
   }
 
