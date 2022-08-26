@@ -1,6 +1,6 @@
 const express = require("express");
 const cookieParser = require('cookie-parser');
-
+const bcrypt = require("bcryptjs");
 const app = express();
 const PORT = 8080; //default port 8000
 
@@ -57,7 +57,7 @@ app.get("/hello", (req, res) => {
 });
 
 app.get("/urls", (req, res) => { //adding a route for/urls and passing variables to the template
-  const templateVars = { urls: urlsForUser(req.cookies["user_id"],urlDatabase), user: users[req.cookies["user_id"]]};
+  const templateVars = { urls: urlsForUser(req.cookies["user_id"], urlDatabase), user: users[req.cookies["user_id"]] };
   res.render("urls_index", templateVars)
 });
 
@@ -70,11 +70,11 @@ app.get("/urls/new", (req, res) => {
 });
 
 app.get("/urls/:id", (req, res) => { //adding route handler for urls/:id to capture the shortebed URL as a parameter
-  if(!req.cookies["user_id"]){//checks if user is logged in and if not sends an error
+  if (!req.cookies["user_id"]) {//checks if user is logged in and if not sends an error
     res.status(403).send("Please log in to view the link");
   };
 
-  if (urlDatabase[req.params.id].userID!==req.cookies["user_id"]){
+  if (urlDatabase[req.params.id].userID !== req.cookies["user_id"]) {
     res.status(403).send("this is not your link");//checks if the link belongs to the user
   };
 
@@ -119,35 +119,35 @@ app.post("/urls", (req, res) => {
 });
 
 app.post("/urls/:id/delete", (req, res) => {// add route to delete urls and redirect to main page
-  
+
   if (urlDatabase[req.params.id] === undefined) { //sends an error message if link does not exist
     res.status(403).send("Link does not exist, please try again");
   }
 
-  if(!req.cookies["user_id"]){//checks if user is logged in and if not sends an error
+  if (!req.cookies["user_id"]) {//checks if user is logged in and if not sends an error
     res.status(403).send("Please log in to view the link");
   };
 
-  if (urlDatabase[req.params.id].userID!==req.cookies["user_id"]){
+  if (urlDatabase[req.params.id].userID !== req.cookies["user_id"]) {
     res.status(403).send("this is not your link");//checks if the link belongs to the user
   };
-  
+
   let idToDelete = req.params.id;
   delete urlDatabase[idToDelete];
   res.redirect("/urls");
 });
 
 app.post("/urls/:id/update", (req, res) => {
-  
+
   if (urlDatabase[req.params.id] === undefined) { //sends an error message if link does not exist
     res.status(403).send("Link does not exist, please try again");
   }
 
-  if(!req.cookies["user_id"]){//checks if user is logged in and if not sends an error
+  if (!req.cookies["user_id"]) {//checks if user is logged in and if not sends an error
     res.status(403).send("Please log in to view the link");
   };
 
-  if (urlDatabase[req.params.id].userID!==req.cookies["user_id"]){
+  if (urlDatabase[req.params.id].userID !== req.cookies["user_id"]) {
     res.status(403).send("this is not your link");//checks if the link belongs to the user
   };
 
@@ -157,9 +157,10 @@ app.post("/urls/:id/update", (req, res) => {
 });
 
 app.post("/login", (req, res) => { //route to loging when user signs in
+
   if (getUserByEmail(users, req.body.email) === null) {
     res.status(403).send('user does not exist');//returns error if user doesnt exist
-  } else if (getUserByEmail(users, req.body.email).password !== req.body.password) {
+  } else if (!bcrypt.compareSync(req.body.password,getUserByEmail(users, req.body.email).password )) {
     res.status(403).send('wrong password');//returns error if password is wrong
   } else {
     res.cookie("user_id", getUserByEmail(users, req.body.email).id);//passes user id cookie
@@ -176,6 +177,7 @@ app.post("/register", (req, res) => { //route to add user info to blobal users o
   const userID = generateRandomString();
   const userEmail = req.body.email;
   const userPassword = req.body.password;
+  const hashedPassword = bcrypt.hashSync(userPassword, 10);
 
   if (!userEmail || !userPassword) {//checks if either of email or passwords is empty
     res.status(400).send('invalid input');
@@ -186,7 +188,7 @@ app.post("/register", (req, res) => { //route to add user info to blobal users o
     users[userID] = { //saves user info in the user object
       id: userID,
       email: userEmail,
-      password: userPassword
+      password: hashedPassword
     };
 
     res.cookie("user_id", users[userID].id);//saves the user info as a cookie
