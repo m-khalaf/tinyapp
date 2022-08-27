@@ -2,6 +2,8 @@ const express = require("express");
 const cookieParser = require('cookie-parser');
 const cookieSession = require('cookie-session');
 const bcrypt = require("bcryptjs");
+const {getUserByEmail, generateRandomString, urlsForUser} = require("./helpers");
+
 const app = express();
 const PORT = 8080; //default port 8000
 
@@ -12,29 +14,6 @@ app.use(cookieSession({
   name: 'session',
   keys: ['abcdefghlijkaosiedfbdfb']
 }));
-
-function generateRandomString() { //generates random 6 charachter string
-  let r = (Math.random() + 1).toString(36).substring(6);
-  return r;
-};
-
-function getUserByEmail(usersObject, email) {//returns user's object if it exists
-  for (const user in usersObject) {
-    if (usersObject[user].email === email) {
-      return usersObject[user];
-    }
-  }
-  return null;
-};
-
-function urlsForUser(id, URLs) {
-  let userUrls = {};
-  for (const url in URLs)
-    if (id === URLs[url].userID) {
-      userUrls[url] = URLs[url];
-    }
-  return userUrls;
-}
 
 const users = {};//empty object to store users information when they register
 
