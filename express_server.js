@@ -2,6 +2,7 @@ const express = require("express");
 const cookieParser = require('cookie-parser');
 const cookieSession = require('cookie-session');
 const bcrypt = require("bcryptjs");
+const methodOverride = require('method-override')
 const {getUserByEmail, generateRandomString, urlsForUser} = require("./helpers");
 
 const app = express();
@@ -14,6 +15,7 @@ app.use(cookieSession({
   name: 'session',
   keys: ['abcdefghlijkaosiedfbdfb']
 }));
+app.use(methodOverride('_method'))
 
 const users = {};//empty object to store users information when they register
 
@@ -102,7 +104,7 @@ app.post("/urls", (req, res) => {
   res.redirect(`/urls/${id}`); //redirect to the urls/:id which initiates a get reuquest that renders the page of the url
 });
 
-app.post("/urls/:id/delete", (req, res) => {// add route to delete urls and redirect to main page
+app.delete("/urls/:id", (req, res) => {// add route to delete urls and redirect to main page
 
   if (urlDatabase[req.params.id] === undefined) { //sends an error message if link does not exist
     res.status(403).send("Link does not exist, please try again");
@@ -121,7 +123,7 @@ app.post("/urls/:id/delete", (req, res) => {// add route to delete urls and redi
   res.redirect("/urls");
 });
 
-app.post("/urls/:id/update", (req, res) => {
+app.put("/urls/:id", (req, res) => {
 
   if (urlDatabase[req.params.id] === undefined) { //sends an error message if link does not exist
     res.status(403).send("Link does not exist, please try again");
