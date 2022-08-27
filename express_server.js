@@ -5,10 +5,9 @@ const bcrypt = require("bcryptjs");
 const methodOverride = require('method-override')
 const { getUserByEmail, generateRandomString, urlsForUser } = require("./helpers");
 
+
 const app = express();
 const PORT = 8080; //default port 8000
-let counter = 0;
-let uniqueUsers={};
 app.set("view engine", "ejs"); //Set ejs as the view engine
 app.use(express.urlencoded({ extended: true })); //translates the buffer sent in the body of post request
 app.use(cookieParser()); //parse cookies from a string to objects to access their keys
@@ -30,6 +29,10 @@ const urlDatabase = {
     userID: "aJ48lW",
   },
 };
+
+let counter = 0; //counts how many url has been visited
+let uniqueUsers={};//object to store unique users that has visited a url (stretch)
+let data={};//object to store user id and time stamp of each visit of url (stretch)
 
 app.get("/", (req, res) => {
   res.send("Hello!");
@@ -64,17 +67,22 @@ app.get("/urls/:id", (req, res) => { //adding route handler for urls/:id to capt
   if (urlDatabase[req.params.id].userID !== req.session.user_id) {
     res.status(403).send("this is not your link");//checks if the link belongs to the user
   };
-  const templateVars = { id: req.params.id, longURL: urlDatabase[req.params.id].longURL, user: users[req.session.user_id], counter: counter,NumberOfUniqueUsers: Object.keys(uniqueUsers).length };
+  const templateVars = { id: req.params.id, longURL: urlDatabase[req.params.id].longURL, user: users[req.session.user_id], counter: counter,NumberOfUniqueUsers: Object.keys(uniqueUsers).length, data:data };
   res.render("urls_show", templateVars)
 });
 
 app.get("/u/:id", (req, res) => {
+  
   if (urlDatabase[req.params.id] === undefined) { //sends an error message if link does not exist
     res.status(403).send("Link does not exist, please try again");
   };
-  counter++;//increments everytime the link has been visited
-  uniqueUsers[req.session.user_id]=users[req.session.user_id];
+  
   const longURL = urlDatabase[req.params.id].longURL; //saves the corresponding long URL in a variable
+  
+  counter++;//increments everytime the link has been visited
+  uniqueUsers[req.session.user_id]=users[req.session.user_id];//creates a new user for every unique user visit to the site
+  data[new Date()]=req.session.user_id;//creates a new object key with the time of each visit and value equal to user id
+  
   res.redirect(longURL); //redirects the short form to the actual long URL
 });
 

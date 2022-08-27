@@ -37,6 +37,25 @@
       <div class="card-footer text-muted"></div>
       
     </div>
+
+    <div>
+      <table class="table">
+        <thead>
+          <tr>
+            <th scope="col">visited By</th>
+            <th scope="col">Time of visit</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% for (let time in data) { %>
+          <tr>
+            <td><%=data[time]%></td>
+            <td><%=time%></td>
+          </tr>
+          <% } %>
+        </tbody>
+      </table>
+    </div>
     <!-- Bootstrap JS -->
     <script
       src="https://code.jquery.com/jquery-3.3.1.slim.min.js"
