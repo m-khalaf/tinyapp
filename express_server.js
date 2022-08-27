@@ -3,15 +3,16 @@ const cookieParser = require('cookie-parser');
 const cookieSession = require('cookie-session');
 const bcrypt = require("bcryptjs");
 const methodOverride = require('method-override')
-const {getUserByEmail, generateRandomString, urlsForUser} = require("./helpers");
+const { getUserByEmail, generateRandomString, urlsForUser } = require("./helpers");
 
 const app = express();
 const PORT = 8080; //default port 8000
-
+let counter = 0;
+let uniqueUsers={};
 app.set("view engine", "ejs"); //Set ejs as the view engine
 app.use(express.urlencoded({ extended: true })); //translates the buffer sent in the body of post request
-app.use(cookieParser());
-app.use(cookieSession({
+app.use(cookieParser()); //parse cookies from a string to objects to access their keys
+app.use(cookieSession({ // encrypts the cookies
   name: 'session',
   keys: ['abcdefghlijkaosiedfbdfb']
 }));
@@ -63,15 +64,16 @@ app.get("/urls/:id", (req, res) => { //adding route handler for urls/:id to capt
   if (urlDatabase[req.params.id].userID !== req.session.user_id) {
     res.status(403).send("this is not your link");//checks if the link belongs to the user
   };
-
-  const templateVars = { id: req.params.id, longURL: urlDatabase[req.params.id].longURL, user: users[req.session.user_id] };
+  const templateVars = { id: req.params.id, longURL: urlDatabase[req.params.id].longURL, user: users[req.session.user_id], counter: counter,NumberOfUniqueUsers: Object.keys(uniqueUsers).length };
   res.render("urls_show", templateVars)
 });
 
 app.get("/u/:id", (req, res) => {
   if (urlDatabase[req.params.id] === undefined) { //sends an error message if link does not exist
     res.status(403).send("Link does not exist, please try again");
-  }
+  };
+  counter++;//increments everytime the link has been visited
+  uniqueUsers[req.session.user_id]=users[req.session.user_id];
   const longURL = urlDatabase[req.params.id].longURL; //saves the corresponding long URL in a variable
   res.redirect(longURL); //redirects the short form to the actual long URL
 });
@@ -155,7 +157,7 @@ app.post("/login", (req, res) => { //route to loging when user signs in
 });
 
 app.post("/logout", (req, res) => { //route to logout when user logs out
-  req.session=null;//clears th coookie when loggin out
+  req.session = null;//clears th coookie when loggin out
   res.redirect("/urls");
 });
 
@@ -164,7 +166,6 @@ app.post("/register", (req, res) => { //route to add user info to blobal users o
   const userEmail = req.body.email;
   const userPassword = req.body.password;
   const hashedPassword = bcrypt.hashSync(userPassword, 10);
-
   if (!userEmail || !userPassword) {//checks if either of email or passwords is empty
     res.status(400).send('invalid input');
   } else if (getUserByEmail(users, userEmail) !== null) {//checks if user already exists
@@ -182,7 +183,6 @@ app.post("/register", (req, res) => { //route to add user info to blobal users o
   }
 
 });
-
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
 });
