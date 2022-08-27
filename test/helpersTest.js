@@ -38,23 +38,23 @@ const urlDatabase = {
 };
 
 //testing getUserByEmail helper function
-describe('getUserByEmail', function () {
-  it('should return a user with valid email', function () {
-    const user = getUserByEmail(testUsers, "abc@gmail.com")
+describe('getUserByEmail', function() {
+  it('should return a user with valid email', function() {
+    const user = getUserByEmail(testUsers, "abc@gmail.com");
     const expectedUserID = "ad4fh5";
     assert.strictEqual(user.id, expectedUserID);
   });
 
-  it('should return null since user does not exist', function () {
-    const user = getUserByEmail(testUsers, "abc123@gmail.com")
+  it('should return null since user does not exist', function() {
+    const user = getUserByEmail(testUsers, "abc123@gmail.com");
     const expectedUserID = null;
     assert.strictEqual(user, expectedUserID);
   });
 });
 
 //testing urlsForUSer helper function
-describe('urlsForUser', function () {
-  it('should return urls object that belongs to the user', function () {
+describe('urlsForUser', function() {
+  it('should return urls object that belongs to the user', function() {
     const userUrls = urlsForUser("ad4fh5", urlDatabase);
     const expectedUrls = {
       b6UTxQ: {
@@ -69,7 +69,7 @@ describe('urlsForUser', function () {
     assert.deepEqual(userUrls, expectedUrls);
   });
 
-  it('should return an empty object since there are no urls that belong to the user', function () {
+  it('should return an empty object since there are no urls that belong to the user', function() {
     const userUrls = urlsForUser("aabce", urlDatabase);
     const expectedUrls = {};
     assert.deepEqual(userUrls, expectedUrls);
