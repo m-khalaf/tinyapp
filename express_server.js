@@ -26,7 +26,10 @@ let uniqueUsers = {};//object to store unique users that has visited a url (stre
 let data = {};//object to store user id and time stamp of each visit of url (stretch)
 
 app.get("/", (req, res) => {
-  res.send("Hello!");
+  if (!req.session.user_id) {//redirect user to login if they are not logged in
+    res.redirect("/login");
+  }
+  res.redirect("/urls"); //redirects user to urls if logged in already
 });
 
 app.get("/urls.json", (req, res) => {
@@ -45,12 +48,18 @@ app.get("/urls", (req, res) => { //adding a route for /urls and passing variable
 app.get("/urls/new", (req, res) => { //route to add new urls
   if (!req.session.user_id) {//redirect user to login page before creating a new link
     res.redirect("/login");
-  }
+  };
+
   const templateVars = { user: users[req.session.user_id] };
   res.render("urls_new", templateVars);
 });
 
 app.get("/urls/:id", (req, res) => { //adding route handler for urls/:id to capture the shortebed URL as a parameter
+  
+  if (urlDatabase[req.params.id] === undefined) { //sends an error message if link does not exist
+    res.status(403).send("Link does not exist, please try another link");
+  }
+  
   if (!req.session.user_id) {//checks if user is logged in and if not sends an error
     res.status(403).send("Please log in to view the link");
   }
@@ -58,29 +67,31 @@ app.get("/urls/:id", (req, res) => { //adding route handler for urls/:id to capt
   if (urlDatabase[req.params.id].userID !== req.session.user_id) {
     res.status(403).send("this is not your link");//checks if the link belongs to the user and if not sends an error
   }
-  const templateVars = { id: req.params.id, longURL: urlDatabase[req.params.id].longURL, user: users[req.session.user_id], counter: counter,NumberOfUniqueUsers: Object.keys(uniqueUsers).length, data:data };
+
+  const templateVars = { id: req.params.id, longURL: urlDatabase[req.params.id].longURL, user: users[req.session.user_id], counter: counter, NumberOfUniqueUsers: Object.keys(uniqueUsers).length, data: data, creationDate:urlDatabase[req.params.id].creationDate };
   res.render("urls_show", templateVars);
 });
 
 app.get("/u/:id", (req, res) => {
-  
+
   if (urlDatabase[req.params.id] === undefined) { //sends an error message if link does not exist
     res.status(403).send("Link does not exist, please try again");
   }
-  
+
   const longURL = urlDatabase[req.params.id].longURL; //saves the corresponding long URL in a variable
-  
+
   counter++;//increments everytime the link has been visited
   uniqueUsers[req.session.user_id] = users[req.session.user_id];//creates a new user for every unique user visit to the site
   data[new Date()] = req.session.user_id;//creates a new object key with the time of each visit and value equal to user id
-  
+
   res.redirect(longURL); //redirects the short form to the actual long URL
 });
 
 app.get("/register", (req, res) => { //route to register new user
   if (req.session.user_id) {//redirects user to main page if they are already logged in
     res.redirect("/urls");
-  }
+  };
+
   const templateVars = { user: users[req.session.user_id] };
   res.render("urls_newForm", templateVars);
 });
@@ -88,7 +99,8 @@ app.get("/register", (req, res) => { //route to register new user
 app.get("/login", (req, res) => {
   if (req.session.user_id) {//redirects user to main page if they are already logged in
     res.redirect("/urls");
-  }
+  };
+
   const templateVars = { user: users[req.session.user_id] };
   res.render("urls_login", templateVars);
 });
@@ -96,12 +108,15 @@ app.get("/login", (req, res) => {
 app.post("/urls", (req, res) => {
   if (!req.session.user_id) { //prevents user from adding a new link till they sign in
     res.send("you are sneaky...log in first before creating a new link");
-  }
+  };
+
   let id = generateRandomString();// generates random characters and saves it to the short ID
   urlDatabase[id] = {
     longURL: req.body.longURL,
-    userID: req.session.user_id
+    userID: req.session.user_id,
+    creationDate: new Date(),
   };
+
   res.redirect(`/urls/${id}`); //redirect to the urls/:id which initiates a get reuquest that renders the page of the url
 });
 
@@ -109,15 +124,15 @@ app.delete("/urls/:id", (req, res) => {// add route to delete urls and redirect 
 
   if (urlDatabase[req.params.id] === undefined) { //sends an error message if link does not exist
     res.status(403).send("Link does not exist, please try again");
-  }
+  };
 
   if (!req.session.user_id) {//checks if user is logged in and if not sends an error
     res.status(403).send("Please log in to view the link");
-  }
+  };
 
   if (urlDatabase[req.params.id].userID !== req.session.user_id) {
     res.status(403).send("this is not your link");//checks if the link belongs to the user
-  }
+  };
 
   let idToDelete = req.params.id;
   delete urlDatabase[idToDelete];
@@ -174,7 +189,7 @@ app.post("/register", (req, res) => { //route to add user info to blobal users o
   } else if (getUserByEmail(users, userEmail) !== null) {//checks if user already exists
     res.status(400).send('User already exists');
 
-  } else {//if user does not exists saves the infor to the object
+  } else {//if user does not exists saves the info to the object
     users[userID] = { //saves user info in the user object
       id: userID,
       email: userEmail,
